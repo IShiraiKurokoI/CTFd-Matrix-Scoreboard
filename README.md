@@ -17,4 +17,4 @@ docker restart ctfd_ctfd_1
 
 ![image-20230705162434642](image-20230705162434642.png)
 
-目前只支持`reverse`,`pwn`,`web`,`misc`,`crypto`五个方向的前端显示，有需要的可以自行修改源码
+计分板现已支持全部任意类别题目
