@@ -177,6 +177,12 @@ def load(app):
 
                     # 记录解决状态和排名
                     user_status.append({'challenge_id': challenge_id, 'rank': rank})
+                # 新生加分
+                if get_config("matrix:score_switch"):
+                    if user.sid:
+                        if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
+                            total_score += get_config("matrix:score_num")
+
                 matrix_scores.append(
                     {'name': user.name, 'id': user.user_id, 'total_score': total_score,
                      'challenge_solved': user_status})
