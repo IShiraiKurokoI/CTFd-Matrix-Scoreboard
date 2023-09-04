@@ -194,6 +194,7 @@ def load(app):
                     if user.sid:
                         if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
                             total_score += get_config("matrix:score_num")
+                            award_value += get_config("matrix:score_num")
                 # 奖项加分
                 for award in awards:
                     if award.user_id == user.user_id:
