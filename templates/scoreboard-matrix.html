@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block stylesheets %}
+<link href="https://fonts.googleapis.com/css2?family=Rubik" rel="stylesheet">
 <style>
     th.chalname {
         height: 80px;
@@ -58,6 +59,12 @@
         border-left: 2px solid white;
         border-right: 2px solid white;
     }
+    .left-line{
+        border-left: 2px solid white;
+    }
+    .right-line{
+        border-right: 2px solid white;
+    }
 </style>
 {% endblock %}
 
@@ -73,7 +80,7 @@
         <h1><b>{{"Scoreboard" if en else "计分板"}}</b></h1>
     </div>
 </div>
-<div class="container main-container">
+<div class="container main-container" style="font-family: Rubik">
     {% if errors %}
     <div class="container main-container">
         <div id='errors' class="row">
@@ -93,22 +100,25 @@
         <table id="scoreboard" class="table table-striped">
             <thead>
                 <tr>
-                    <th rowspan="3"><b>{{"Place" if en else "排名"}}</b>
+                    <th rowspan="3" style="border-top: 0"><b>{{"Place" if en else "排名"}}</b>
                     </th>
                     {% if get_config('user_mode') == 'teams' %}
-                    <th rowspan="6" style="text-align: center;"><b>{{"Team" if en else "队伍名称"}}</b>
+                    <th rowspan="3" style="text-align: center;border-top: 0"><b>{{"Team" if en else "队伍名称"}}</b>
                     </th>
                     {% else %}
-                    <th rowspan="6" style="text-align: center;"><b>{{"Username" if en else "用户昵称"}}</b>
+                    <th rowspan="3" style="text-align: center;border-top: 0"><b>{{"Username" if en else "用户昵称"}}</b>
                     </th>
                     {% endif %}
-                    <th rowspan="3"><b>{{"Score" if en else "得分"}}</b>
+                    <th rowspan="3" class="right-line" style="border-top: 0"><b>{{"Score" if en else "得分"}}</b>
                     </th>
                     {% for cat in categories %}
                         <th data-halign="center" class="table-category-header" data-align="center" colspan="{% if loop.last %}{{ cat.count + 2 }}{% else %}{{ cat.count }}{% endif %}" style="text-align: center;background-color: {{color_hash(cat.category)}};">
                             <b>{{ cat.category }}</b>
                         </th>
                     {% endfor %}
+                    <th data-halign="center" class="table-category-header" data-align="center" colspan="4" style="text-align: center;background-color: {{color_hash('奖项')}};">
+                        <b>{{"Award" if en else "奖项"}}</b>
+                    </th>
                 </tr>
                 <tr>
                     {% for chal in challenges %}
@@ -119,8 +129,13 @@
                     </div>
                     {% endfor %}
                     <div>
-                        <th class="chalname" >
+                        <th class="chalname right-line" colspan="2">
                             <div><span></span></div>
+                        </th>
+                    </div>
+                    <div>
+                        <th class="right-line" style="border-bottom: 0;vertical-align: bottom;padding-bottom: 0;horiz-align: center" colspan="2">
+                            <div><span>{{"Award" if en else "奖励"}}</span></div>
                         </th>
                     </div>
                 </tr>
@@ -133,8 +148,13 @@
                     </div>
                     {% endfor %}
                     <div>
-                        <th width="10%" class="score" colspan="2">
+                        <th width="10%" class="score right-line" colspan="2">
                             <div><span></span></div>
+                        </th>
+                    </div>
+                    <div>
+                        <th width="10%" class="score right-line" style="border-top: 0;vertical-align: top;padding-top: 0;horiz-align: center" colspan="2">
+                            <div><span>{{"Score" if en else "分数"}}</span></div>
                         </th>
                     </div>
                 </tr>
@@ -142,9 +162,9 @@
             <tbody>
                 {% for team in standings %}
                 <tr>
-                    <td>{{ loop.index }}</td>
-                    <td><a href="{{ request.script_root }}/{{ mode }}/{{ team.id }}" target="_blank">{{ team.name }}</a></td>
-                    <td>{{ team.total_score }}</td>
+                    <td class="left-line">{{ loop.index }}</td>
+                    <td ><a href="{{ request.script_root }}/{{ mode }}/{{ team.id }}" target="_blank">{{ team.name }}</a></td>
+                    <td class="right-line">{{ team.total_score }}</td>
                     {% for chal in challenges %}
                     <td class="chalmark">
                         {% for solved_challenge in team.challenge_solved %}
@@ -164,6 +184,9 @@
                     </td>
                     {% endfor %}
                     <td class="chalmark" colspan="2">
+                    </td>
+                    <td class="chalmark left-line right-line" colspan="2">
+                        {{ team.award_value }}
                     </td>
                 </tr>
                 {% endfor %}

@@ -16,7 +16,7 @@ from sqlalchemy.sql import or_
 
 import CTFd.utils.scores
 from CTFd import utils, scoreboard
-from CTFd.models import db, Solves, Challenges, Users, Teams
+from CTFd.models import db, Solves, Challenges, Users, Teams, Awards
 from CTFd.plugins import (
     register_plugin_assets_directory,
     register_admin_plugin_menu_bar,
@@ -99,10 +99,13 @@ def load(app):
         solves = db.session.query(Solves.date.label('date'), Solves.challenge_id.label('challenge_id'),
                                   Solves.user_id.label('user_id'),
                                   Solves.team_id.label('team_id')).all()
+        awards = db.session.query(Awards.user_id.label('user_id'), Awards.team_id.label('team_id'),
+                                  Awards.value.label('value'), Awards.date.label('date')).all()
         freeze = utils.get_config('freeze')
         if freeze:
             freeze = unix_time_to_utc(freeze)
             solves = solves.filter(Solves.date < freeze)
+            awards = awards.filter(Awards.date < freeze)
 
         # 创建一个字典来存储每个challenge_id的前三条数据
         top_solves = defaultdict(list)
@@ -147,9 +150,17 @@ def load(app):
 
                     # 记录解决状态和排名
                     team_status.append({'challenge_id': challenge_id, 'rank': rank})
+
+                award_value = 0
+                # 奖项加分
+                for award in awards:
+                    if award.team_id == team.team_id:
+                        total_score += award.value
+                        award_value += award.value
+
                 matrix_scores.append(
                     {'name': team.name, 'id': team.team_id, 'total_score': total_score,
-                     'challenge_solved': team_status})
+                     'challenge_solved': team_status , 'award_value': award_value})
             matrix_scores.sort(key=lambda x: x['total_score'], reverse=True)
             return matrix_scores
         else:
@@ -182,10 +193,16 @@ def load(app):
                     if user.sid:
                         if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
                             total_score += get_config("matrix:score_num")
+                award_value = 0
+                # 奖项加分
+                for award in awards:
+                    if award.user_id == user.user_id:
+                        total_score += award.value
+                        award_value += award.value
 
                 matrix_scores.append(
                     {'name': user.name, 'id': user.user_id, 'total_score': total_score,
-                     'challenge_solved': user_status})
+                     'challenge_solved': user_status , 'award_value': award_value})
             matrix_scores.sort(key=lambda x: x['total_score'], reverse=True)
             return matrix_scores
 
