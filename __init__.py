@@ -164,7 +164,7 @@ def load(app):
             matrix_scores.sort(key=lambda x: x['total_score'], reverse=True)
             return matrix_scores
         else:
-            users = db.session.query(Users.id.label('user_id'), Users.name.label('name')).all()
+            users = db.session.query(Users.id.label('user_id'), Users.name.label('name'), Users.sid.label('sid')).all()
             matrix_scores = []
             for user in users:
                 user_solves = [solve for solve in solves if solve[2] == user.user_id]
@@ -188,12 +188,12 @@ def load(app):
 
                     # 记录解决状态和排名
                     user_status.append({'challenge_id': challenge_id, 'rank': rank})
+                award_value = 0
                 # 新生加分
                 if get_config("matrix:score_switch"):
                     if user.sid:
                         if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
                             total_score += get_config("matrix:score_num")
-                award_value = 0
                 # 奖项加分
                 for award in awards:
                     if award.user_id == user.user_id:
