@@ -96,17 +96,29 @@ def load(app):
         # 获取所有题目数据并获取数目
         challenges = Challenges.query.filter(*[]).order_by(Challenges.id.asc()).all()
         # 获取所有分数数据和解题数据，并过滤无效数据
-        solves = db.session.query(Solves.date.label('date'), Solves.challenge_id.label('challenge_id'),
+        solves = db.session.query(Solves.date.label('date'),
+                                  Solves.challenge_id.label('challenge_id'),
                                   Solves.user_id.label('user_id'),
                                   Solves.team_id.label('team_id')).all()
-        awards = db.session.query(Awards.user_id.label('user_id'), Awards.team_id.label('team_id'),
-                                  Awards.value.label('value'), Awards.date.label('date')).all()
+        awards = db.session.query(Awards.user_id.label('user_id'),
+                                  Awards.team_id.label('team_id'),
+                                  Awards.value.label('value'),
+                                  Awards.date.label('date')).all()
+        teams = db.session.query(Teams.id.label('team_id'),
+                                 Teams.name.label('name'),
+                                 Teams.hidden.label('hidden'),
+                                 Teams.banned.label('banned')).all()
+        users = db.session.query(Users.id.label('user_id'),
+                                 Users.name.label('name'),
+                                 Users.sid.label('sid'),
+                                 Users.hidden.label('hidden'),
+                                 Users.banned.label('banned')).all()
         freeze = utils.get_config('freeze')
+        mode = get_config("user_mode")
         if freeze:
             freeze = unix_time_to_utc(freeze)
             solves = solves.filter(Solves.date < freeze)
             awards = awards.filter(Awards.date < freeze)
-
         # 创建一个字典来存储每个challenge_id的前三条数据
         top_solves = defaultdict(list)
         # 将solves数据按照challenge_id和date排序
@@ -117,18 +129,31 @@ def load(app):
             # 检查是否已经存储了三条数据，如果是，跳过
             if len(top_solves[challenge_id]) >= 3:
                 continue
+            # 检查是否隐藏/封禁
+            user = next((user for user in users if user.user_id == solve.user_id), None)
+            if not user:
+                continue
+            if user.hidden or user.banned:
+                continue
+
+            if mode == TEAMS_MODE:
+                team = next((team for team in teams if team.team_id == solve.team_id), None)
+                if not team:
+                    continue
+                if team.hidden or team.banned:
+                    continue
+
             # 否则将数据添加到对应的challenge_id中
             top_solves[challenge_id].append({
                 'date': solve.date,
                 'user_id': solve.user_id,
                 'team_id': solve.team_id
             })
-
-        mode = get_config("user_mode")
         if mode == TEAMS_MODE:
-            teams = db.session.query(Teams.id.label('team_id'), Teams.name.label('name')).all()
             matrix_scores = []
             for team in teams:
+                if team.hidden or team.banned:
+                    continue
                 team_solves = [solve for solve in solves if solve[3] == team.team_id]
                 total_score = 0
                 team_status = []
@@ -160,13 +185,14 @@ def load(app):
 
                 matrix_scores.append(
                     {'name': team.name, 'id': team.team_id, 'total_score': total_score,
-                     'challenge_solved': team_status , 'award_value': award_value})
+                     'challenge_solved': team_status, 'award_value': award_value})
             matrix_scores.sort(key=lambda x: x['total_score'], reverse=True)
             return matrix_scores
         else:
-            users = db.session.query(Users.id.label('user_id'), Users.name.label('name'), Users.sid.label('sid')).all()
             matrix_scores = []
             for user in users:
+                if user.hidden or user.banned:
+                    continue
                 user_solves = [solve for solve in solves if solve[2] == user.user_id]
                 total_score = 0
                 user_status = []
@@ -203,7 +229,7 @@ def load(app):
 
                 matrix_scores.append(
                     {'name': user.name, 'id': user.user_id, 'total_score': total_score,
-                     'challenge_solved': user_status , 'award_value': award_value})
+                     'challenge_solved': user_status, 'award_value': award_value})
             matrix_scores.sort(key=lambda x: x['total_score'], reverse=True)
             return matrix_scores
 
@@ -261,13 +287,20 @@ def load(app):
         if scores_visible() and not authed():
             return redirect(url_for('auth.login', next=request.path))
         if get_config("matrix:switch"):
-            if not scores_visible():
-                if language == "zh":
+            if language == "zh":
+                if not scores_visible():
                     return render_template('scoreboard-matrix.html',
                                            errors=['当前分数已隐藏'])
-                else:
+                if not ctf_started():
+                    return render_template('scoreboard-matrix.html',
+                                           errors=['比赛尚未开始'])
+            else:
+                if not scores_visible():
                     return render_template('scoreboard-matrix.html',
                                            errors=['Score is currently hidden'])
+                if not ctf_started():
+                    return render_template('scoreboard-matrix.html',
+                                           errors=['Not Start Yet'])
             standings = get_matrix_standings()
             return render_template('scoreboard-matrix.html',
                                    standings=standings,
@@ -284,11 +317,18 @@ def load(app):
                     infos.append("计分板已经冻结。")
                 if not scores_visible():
                     infos.append("当前分数已隐藏。")
+                if not ctf_started():
+                    infos.append("比赛尚未开始。")
+                    return render_template("scoreboard.html", infos=infos)
             else:
                 if freeze:
                     infos.append("Scoreboard is frozen")
                 if not scores_visible():
                     infos.append("Score is currently hidden")
+                if not ctf_started():
+                    infos.append("Not Start Yet")
+                    return render_template("scoreboard.html", infos=infos)
+
             return render_template("scoreboard.html", standings=CTFd.utils.scores.get_standings(), infos=infos)
 
     app.view_functions['scoreboard.listing'] = scoreboard_view
