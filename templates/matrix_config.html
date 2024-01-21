@@ -4,9 +4,11 @@
     <li class="nav-item">
         <a class="nav-link active" data-toggle="pill" href="#switch">{{"Plugin Switch" if en else "插件开关"}}</a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link" data-toggle="pill" href="#score">{{"Bonus Value" if en else "新生加分"}}</a>
-    </li>
+
+{#    新生加分 （需要user对象有sid字段,默认注释）#}
+{#    <li class="nav-item">#}
+{#        <a class="nav-link" data-toggle="pill" href="#score">{{"Bonus Value" if en else "新生加分"}}</a>#}
+{#    </li>#}
 {% endblock %}
 
 {% block panel %}
@@ -16,7 +18,7 @@
               class="form-horizontal">
             <div class="tab-content">
                 {% include "config/switch.html" %}
-                {% include "config/score.html" %}
+{#                {% include "config/score.html" %}#}
             </div>
         </form>
     </div>

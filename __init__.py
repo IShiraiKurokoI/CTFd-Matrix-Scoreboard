@@ -108,9 +108,14 @@ def load(app):
                                  Teams.name.label('name'),
                                  Teams.hidden.label('hidden'),
                                  Teams.banned.label('banned')).all()
+        #（需要user对象有sid字段,默认注释）
+        # users = db.session.query(Users.id.label('user_id'),
+        #                          Users.name.label('name'),
+        #                          Users.sid.label('sid'),
+        #                          Users.hidden.label('hidden'),
+        #                          Users.banned.label('banned')).all()
         users = db.session.query(Users.id.label('user_id'),
                                  Users.name.label('name'),
-                                 Users.sid.label('sid'),
                                  Users.hidden.label('hidden'),
                                  Users.banned.label('banned')).all()
         freeze = utils.get_config('freeze')
@@ -215,12 +220,12 @@ def load(app):
                     # 记录解决状态和排名
                     user_status.append({'challenge_id': challenge_id, 'rank': rank})
                 award_value = 0
-                # 新生加分
-                if get_config("matrix:score_switch"):
-                    if user.sid:
-                        if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
-                            total_score += get_config("matrix:score_num")
-                            award_value += get_config("matrix:score_num")
+                # 新生加分 （需要user对象有sid字段,默认注释）
+                # if get_config("matrix:score_switch"):
+                #     if user.sid:
+                #         if str(user.sid[:4]) in str(get_config("matrix:score_grade")):
+                #             total_score += get_config("matrix:score_num")
+                #             award_value += get_config("matrix:score_num")
                 # 奖项加分
                 for award in awards:
                     if award.user_id == user.user_id:
